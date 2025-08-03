@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Bell, Settings } from "lucide-react";
+import { CurrencySelector } from "@/components/CurrencySelector";
 
 export const Header = () => {
   return (
@@ -13,6 +14,7 @@ export const Header = () => {
         </div>
         
         <div className="flex items-center space-x-4">
+          <CurrencySelector />
           <Button variant="ghost" size="icon">
             <Bell className="h-5 w-5" />
           </Button>

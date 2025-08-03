@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ChevronDown, Filter, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { useCurrency } from "@/contexts/CurrencyContext";
 
 const transactions = [
   {
@@ -62,6 +63,8 @@ const transactions = [
 ];
 
 export const TransactionList = () => {
+  const { formatAmount } = useCurrency();
+
   return (
     <Card>
       <CardHeader>
@@ -107,7 +110,7 @@ export const TransactionList = () => {
                     transaction.amount > 0 ? 'text-income' : 'text-expense'
                   }`}
                 >
-                  {transaction.amount > 0 ? '+' : ''}${Math.abs(transaction.amount).toFixed(2)}
+                  {transaction.amount > 0 ? '+' : ''}{formatAmount(transaction.amount)}
                 </span>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
                   <ChevronDown className="h-4 w-4" />
