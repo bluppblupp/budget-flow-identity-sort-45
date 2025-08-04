@@ -1,0 +1,125 @@
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+const GOCARDLESS_BASE_URL = 'https://bankaccountdata.gocardless.com/api/v2'
+
+Deno.serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const { action, ...params } = await req.json()
+    const accessToken = Deno.env.get('GOCARDLESS_ACCESS_TOKEN')
+
+    if (!accessToken) {
+      throw new Error('GoCardless access token not configured')
+    }
+
+    const headers = {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    }
+
+    console.log(`GoCardless API call: ${action}`, params)
+
+    switch (action) {
+      case 'getInstitutions': {
+        const { country = 'GB' } = params
+        const response = await fetch(`${GOCARDLESS_BASE_URL}/institutions/?country=${country}`, {
+          headers
+        })
+        const data = await response.json()
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      case 'createRequisition': {
+        const { institutionId, redirectUrl } = params
+        const response = await fetch(`${GOCARDLESS_BASE_URL}/requisitions/`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            institution_id: institutionId,
+            redirect: redirectUrl || window.location.origin,
+            reference: `req_${Date.now()}`,
+          })
+        })
+        const data = await response.json()
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      case 'getRequisition': {
+        const { requisitionId } = params
+        const response = await fetch(`${GOCARDLESS_BASE_URL}/requisitions/${requisitionId}/`, {
+          headers
+        })
+        const data = await response.json()
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      case 'getAccountDetails': {
+        const { accountId } = params
+        const response = await fetch(`${GOCARDLESS_BASE_URL}/accounts/${accountId}/details/`, {
+          headers
+        })
+        const data = await response.json()
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      case 'getAccountBalances': {
+        const { accountId } = params
+        const response = await fetch(`${GOCARDLESS_BASE_URL}/accounts/${accountId}/balances/`, {
+          headers
+        })
+        const data = await response.json()
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      case 'getTransactions': {
+        const { accountId, dateFrom, dateTo } = params
+        let url = `${GOCARDLESS_BASE_URL}/accounts/${accountId}/transactions/`
+        
+        const queryParams = new URLSearchParams()
+        if (dateFrom) queryParams.append('date_from', dateFrom)
+        if (dateTo) queryParams.append('date_to', dateTo)
+        
+        if (queryParams.toString()) {
+          url += `?${queryParams.toString()}`
+        }
+
+        const response = await fetch(url, { headers })
+        const data = await response.json()
+        return new Response(JSON.stringify(data), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
+      }
+
+      default:
+        throw new Error(`Unknown action: ${action}`)
+    }
+  } catch (error) {
+    console.error('GoCardless API error:', error)
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      }
+    )
+  }
+})
