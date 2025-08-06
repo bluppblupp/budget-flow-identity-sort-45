@@ -36,12 +36,15 @@ export const BankConnection = ({ onAccountConnected }: BankConnectionProps) => {
 
   const loadBanks = async () => {
     try {
+      console.log('Loading banks...')
       const bankList = await getBanks('GB') // Default to UK banks
+      console.log('Banks loaded:', bankList)
       setBanks(bankList)
     } catch (err) {
+      console.error('Error loading banks:', err)
       toast({
         title: "Error loading banks",
-        description: "Failed to load available banks",
+        description: error || "Failed to load available banks",
         variant: "destructive"
       })
     }

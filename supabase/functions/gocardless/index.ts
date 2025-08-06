@@ -31,10 +31,18 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'getInstitutions': {
         const { country = 'GB' } = params
+        console.log(`Fetching institutions for country: ${country}`)
         const response = await fetch(`${GOCARDLESS_BASE_URL}/institutions/?country=${country}`, {
           headers
         })
+        
+        if (!response.ok) {
+          console.error('GoCardless API error:', response.status, await response.text())
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`)
+        }
+        
         const data = await response.json()
+        console.log('Institutions response:', data)
         return new Response(JSON.stringify(data), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         })

@@ -13,8 +13,11 @@ export const Header = () => {
     <header className="border-b border-border/40 bg-card/50 backdrop-blur-sm">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
-            BudgetFlow
+          <h1 
+            className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent cursor-pointer"
+            onClick={() => navigate('/dashboard')}
+          >
+            Peng
           </h1>
         </div>
         

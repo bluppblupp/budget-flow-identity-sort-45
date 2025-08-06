@@ -40,13 +40,16 @@ export const useGoCardless = () => {
     setError(null)
     
     try {
+      console.log('Calling GoCardless API:', action, params)
       const { data, error } = await supabase.functions.invoke('gocardless', {
         body: { action, ...params }
       })
       
+      console.log('GoCardless API response:', data, error)
       if (error) throw error
       return data
     } catch (err) {
+      console.error('GoCardless API error:', err)
       const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred'
       setError(errorMessage)
       throw err
