@@ -15,10 +15,39 @@ Deno.serve(async (req) => {
 
   try {
     const { action, ...params } = await req.json()
-    const accessToken = Deno.env.get('GOCARDLESS_ACCESS_TOKEN')
+    
+    // Check if we need to generate access token first
+    const secretId = Deno.env.get('GOCARDLESS_SECRET_ID')
+    const secretKey = Deno.env.get('GOCARDLESS_SECRET_KEY')
+    let accessToken = Deno.env.get('GOCARDLESS_ACCESS_TOKEN')
+
+    // If we have secret_id and secret_key but no access token, generate one
+    if (secretId && secretKey && !accessToken) {
+      console.log('Generating new access token...')
+      const tokenResponse = await fetch(`${GOCARDLESS_BASE_URL}/token/new/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          secret_id: secretId,
+          secret_key: secretKey
+        })
+      })
+      
+      if (!tokenResponse.ok) {
+        console.error('Failed to generate access token:', await tokenResponse.text())
+        throw new Error('Failed to generate GoCardless access token')
+      }
+      
+      const tokenData = await tokenResponse.json()
+      accessToken = tokenData.access
+      console.log('Generated new access token successfully')
+    }
 
     if (!accessToken) {
-      throw new Error('GoCardless access token not configured')
+      throw new Error('GoCardless access token not available. Please provide either GOCARDLESS_ACCESS_TOKEN or GOCARDLESS_SECRET_ID/GOCARDLESS_SECRET_KEY')
     }
 
     const headers = {
