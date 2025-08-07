@@ -1,6 +1,6 @@
 import { Header } from "@/components/Header";
 import { BudgetOverview } from "@/components/BudgetOverview";
-import { TransactionList } from "@/components/TransactionList";
+import { SampleTransactionList } from "@/components/SampleTransactionList";
 import { CategoryChart } from "@/components/CategoryChart";
 
 const Index = () => {
@@ -21,8 +21,8 @@ const Index = () => {
         {/* Charts Section */}
         <CategoryChart />
 
-        {/* Transactions */}
-        <TransactionList />
+        {/* Sample Transactions */}
+        <SampleTransactionList />
         
         {/* Bank Integration Notice */}
         <div className="mt-12 p-6 rounded-lg border border-warning/20 bg-warning/5">

@@ -146,8 +146,8 @@ export const TransactionList = () => {
     return 'Other';
   };
 
-  // Use real transactions if connected, otherwise show mock data
-  const displayTransactions = connectedAccountId ? transactions : mockTransactions;
+  // Only show real transactions, no mock data for dashboard
+  const displayTransactions = transactions;
 
   if (!connectedAccountId) {
     return (
@@ -156,47 +156,19 @@ export const TransactionList = () => {
         
         <Card>
           <CardHeader>
-            <CardTitle>Sample Transactions</CardTitle>
+            <CardTitle>No Transactions Yet</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Connect your bank account to see real transactions
+              Connect your bank account above to see your real transactions
             </p>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              {mockTransactions.slice(0, 3).map((transaction) => (
-                <div 
-                  key={transaction.id} 
-                  className="flex items-center justify-between p-4 rounded-lg border bg-card/50 opacity-60"
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${transaction.categoryColor}`} />
-                    <div>
-                      <p className="font-medium">{transaction.description}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {new Date(transaction.date).toLocaleDateString()} • {transaction.account}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <Badge variant="secondary" className="text-xs">
-                      {transaction.category}
-                    </Badge>
-                    <span 
-                      className={`font-semibold ${
-                        transaction.amount > 0 ? 'text-income' : 'text-expense'
-                      }`}
-                    >
-                      {transaction.amount > 0 ? '+' : ''}{formatAmount(transaction.amount)}
-                    </span>
-                  </div>
-                </div>
-              ))}
+            <div className="text-center py-8 text-muted-foreground">
+              <p>Your transactions will appear here once you connect a bank account.</p>
             </div>
           </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
   return (
@@ -254,7 +226,7 @@ export const TransactionList = () => {
                       <p className="font-medium">{transaction.description}</p>
                       <p className="text-sm text-muted-foreground">
                         {new Date(transaction.date).toLocaleDateString()} • 
-                        {'account' in transaction ? transaction.account : 'Bank Account'}
+                        {'account' in transaction ? (transaction as any).account : 'Bank Account'}
                       </p>
                     </div>
                   </div>

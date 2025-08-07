@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { useGoCardless, type Bank } from '@/hooks/useGoCardless'
 import { Loader2, Building2, CheckCircle, AlertCircle, Globe } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
 
 interface BankConnectionProps {
   onAccountConnected?: (accountId: string) => void
@@ -108,12 +109,40 @@ export const BankConnection = ({ onAccountConnected }: BankConnectionProps) => {
       const requisition = await getRequisitionStatus(reqId)
       
       if (requisition.status === 'LN' && requisition.accounts?.length > 0) {
-        setConnectionStatus('connected')
-        onAccountConnected?.(requisition.accounts[0])
-        toast({
-          title: "Bank connected successfully!",
-          description: "Your bank account is now linked"
-        })
+        // Save bank connection to database
+        try {
+          const { data: userData } = await supabase.auth.getUser()
+          
+          const { data, error: dbError } = await supabase
+            .from('connected_banks')
+            .insert({
+              user_id: userData.user?.id,
+              account_id: requisition.accounts[0],
+              institution_id: selectedBank || '',
+              bank_name: banks.find(b => b.id === selectedBank)?.name || 'Unknown Bank'
+            })
+            .select()
+            .single()
+
+          if (dbError) {
+            console.error('Failed to save bank connection:', dbError)
+            throw dbError
+          }
+
+          setConnectionStatus('connected')
+          onAccountConnected?.(requisition.accounts[0])
+          toast({
+            title: "Bank connected successfully!",
+            description: "Your bank account is now linked and saved"
+          })
+        } catch (saveError) {
+          console.error('Database save error:', saveError)
+          toast({
+            title: "Connection successful but not saved",
+            description: "Bank connected but failed to save to database",
+            variant: "destructive"
+          })
+        }
       } else if (requisition.status === 'RJ') {
         setConnectionStatus('error')
         toast({
