@@ -60,7 +60,8 @@ export const useGoCardless = () => {
 
   const getBanks = useCallback(async (country = 'GB'): Promise<Bank[]> => {
     const data = await callGoCardlessAPI('getInstitutions', { country })
-    return data.results || []
+    // GoCardless API returns institutions directly as an array, not wrapped in results
+    return Array.isArray(data) ? data : []
   }, [callGoCardlessAPI])
 
   const createBankConnection = useCallback(async (institutionId: string) => {
