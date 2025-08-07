@@ -4,16 +4,38 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { useGoCardless, type Bank } from '@/hooks/useGoCardless'
-import { Loader2, Building2, CheckCircle, AlertCircle } from 'lucide-react'
+import { Loader2, Building2, CheckCircle, AlertCircle, Globe } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 interface BankConnectionProps {
   onAccountConnected?: (accountId: string) => void
 }
 
+const COUNTRIES = [
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'FR', name: 'France' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'BE', name: 'Belgium' },
+  { code: 'AT', name: 'Austria' },
+  { code: 'IE', name: 'Ireland' },
+  { code: 'PT', name: 'Portugal' },
+  { code: 'FI', name: 'Finland' },
+  { code: 'NO', name: 'Norway' },
+  { code: 'DK', name: 'Denmark' },
+  { code: 'SE', name: 'Sweden' },
+  { code: 'PL', name: 'Poland' },
+  { code: 'LT', name: 'Lithuania' },
+  { code: 'LV', name: 'Latvia' },
+  { code: 'EE', name: 'Estonia' }
+]
+
 export const BankConnection = ({ onAccountConnected }: BankConnectionProps) => {
   const [banks, setBanks] = useState<Bank[]>([])
   const [selectedBank, setSelectedBank] = useState<string>('')
+  const [selectedCountry, setSelectedCountry] = useState<string>('GB')
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'connecting' | 'connected' | 'error'>('idle')
   const [requisitionId, setRequisitionId] = useState<string>('')
   
@@ -22,7 +44,7 @@ export const BankConnection = ({ onAccountConnected }: BankConnectionProps) => {
 
   useEffect(() => {
     loadBanks()
-  }, [])
+  }, [selectedCountry])
 
   useEffect(() => {
     // Check for requisition completion from URL params
@@ -36,10 +58,11 @@ export const BankConnection = ({ onAccountConnected }: BankConnectionProps) => {
 
   const loadBanks = async () => {
     try {
-      console.log('Loading banks...')
-      const bankList = await getBanks('GB') // Default to UK banks
+      console.log('Loading banks for country:', selectedCountry)
+      const bankList = await getBanks(selectedCountry)
       console.log('Banks loaded:', bankList)
-      setBanks(bankList)
+      setBanks(bankList || [])
+      setSelectedBank('') // Reset selected bank when country changes
     } catch (err) {
       console.error('Error loading banks:', err)
       toast({
@@ -47,6 +70,7 @@ export const BankConnection = ({ onAccountConnected }: BankConnectionProps) => {
         description: error || "Failed to load available banks",
         variant: "destructive"
       })
+      setBanks([])
     }
   }
 
@@ -146,10 +170,33 @@ export const BankConnection = ({ onAccountConnected }: BankConnectionProps) => {
         {connectionStatus === 'idle' && (
           <div className="space-y-4">
             <div>
-              <label className="text-sm font-medium">Select your bank</label>
-              <Select value={selectedBank} onValueChange={setSelectedBank}>
+              <label className="text-sm font-medium">Select country</label>
+              <Select value={selectedCountry} onValueChange={setSelectedCountry}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose your bank" />
+                  <SelectValue placeholder="Choose country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      <div className="flex items-center gap-2">
+                        <Globe className="w-4 h-4" />
+                        {country.name}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium">Select your bank</label>
+              <Select value={selectedBank} onValueChange={setSelectedBank} disabled={loading || banks.length === 0}>
+                <SelectTrigger>
+                  <SelectValue placeholder={
+                    loading ? "Loading banks..." : 
+                    banks.length === 0 ? "No banks available" : 
+                    "Choose your bank"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
                   {banks.map((bank) => (
@@ -164,6 +211,11 @@ export const BankConnection = ({ onAccountConnected }: BankConnectionProps) => {
                   ))}
                 </SelectContent>
               </Select>
+              {banks.length === 0 && !loading && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  No banks available for {COUNTRIES.find(c => c.code === selectedCountry)?.name}
+                </p>
+              )}
             </div>
 
             <Button 

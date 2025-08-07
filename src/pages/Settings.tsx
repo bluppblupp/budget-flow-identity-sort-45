@@ -148,7 +148,12 @@ const Settings = () => {
   }
 
   const createAccountGroup = async () => {
-    if (!user || !newGroupName.trim()) return
+    if (!user || !newGroupName.trim()) {
+      console.log('Missing user or group name:', { user: !!user, groupName: newGroupName })
+      return
+    }
+
+    console.log('Creating account group:', { name: newGroupName, userId: user.id })
 
     const { data: group, error } = await supabase
       .from('account_groups')
@@ -157,6 +162,7 @@ const Settings = () => {
       .single()
 
     if (error) {
+      console.error('Group creation error:', error)
       toast({
         title: "Group creation failed",
         description: error.message,
@@ -165,14 +171,28 @@ const Settings = () => {
       return
     }
 
+    console.log('Group created successfully:', group)
+
     // Add creator as owner
-    await supabase
+    const { error: membershipError } = await supabase
       .from('group_memberships')
       .insert({
         group_id: group.id,
         user_id: user.id,
         role: 'owner'
       })
+
+    if (membershipError) {
+      console.error('Membership creation error:', membershipError)
+      toast({
+        title: "Membership creation failed",
+        description: membershipError.message,
+        variant: "destructive"
+      })
+      return
+    }
+
+    console.log('Membership created successfully')
 
     setNewGroupName('')
     loadUserData()
