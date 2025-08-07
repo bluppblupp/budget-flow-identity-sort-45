@@ -61,7 +61,16 @@ export const BankConnection = ({ onAccountConnected }: BankConnectionProps) => {
       console.log('Loading banks for country:', selectedCountry)
       const bankList = await getBanks(selectedCountry)
       console.log('Banks loaded:', bankList)
-      setBanks(bankList || [])
+      console.log('Banks array length:', bankList?.length)
+      console.log('Type of bankList:', typeof bankList)
+      console.log('Is array?', Array.isArray(bankList))
+      
+      if (bankList && Array.isArray(bankList)) {
+        setBanks(bankList)
+      } else {
+        console.warn('Invalid bank list received:', bankList)
+        setBanks([])
+      }
       setSelectedBank('') // Reset selected bank when country changes
     } catch (err) {
       console.error('Error loading banks:', err)
