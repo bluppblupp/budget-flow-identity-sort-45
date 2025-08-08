@@ -1,8 +1,8 @@
 import { useEffect } from 'react'
 import { Header } from '@/components/Header'
-import { BudgetOverview } from '@/components/BudgetOverview'
+import { RealDataBudgetOverview } from '@/components/RealDataBudgetOverview'
 import { TransactionList } from '@/components/TransactionList'
-import { CategoryChart } from '@/components/CategoryChart'
+import { RealDataCategoryChart } from '@/components/RealDataCategoryChart'
 import { useAuth } from '@/contexts/AuthContext'
 import { CurrencyProvider } from '@/contexts/CurrencyContext'
 
@@ -40,10 +40,10 @@ const Dashboard = () => {
           </div>
 
           {/* Budget Overview */}
-          <BudgetOverview />
+          <RealDataBudgetOverview />
 
           {/* Charts Section */}
-          <CategoryChart />
+          <RealDataCategoryChart />
 
           {/* Transactions */}
           <TransactionList />

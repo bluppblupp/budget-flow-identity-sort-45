@@ -19,6 +19,22 @@ export const Header = () => {
           >
             Peng
           </h1>
+          <nav className="hidden md:flex space-x-6">
+            <Button 
+              variant="ghost" 
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => navigate('/dashboard')}
+            >
+              Dashboard
+            </Button>
+            <Button 
+              variant="ghost" 
+              className="text-muted-foreground hover:text-foreground"
+              onClick={() => navigate('/budget')}
+            >
+              Budget
+            </Button>
+          </nav>
         </div>
         
         <div className="flex items-center space-x-4">

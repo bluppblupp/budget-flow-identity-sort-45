@@ -8,75 +8,9 @@ import { useCurrency } from "@/contexts/CurrencyContext";
 import { useGoCardless, type Transaction } from "@/hooks/useGoCardless";
 import { BankConnection } from "./BankConnection";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { categorizeTransaction, getCategoryColor } from "@/utils/categoryUtils";
 
-const mockTransactions = [
-  {
-    id: "1",
-    date: "2024-01-20",
-    description: "Grocery Store",
-    amount: -85.50,
-    category: "Food & Dining",
-    account: "Checking",
-    categoryColor: "bg-orange-500",
-    currency: "USD",
-    type: "debit" as const
-  },
-  {
-    id: "2",
-    date: "2024-01-19",
-    description: "Salary Deposit",
-    amount: 3500.00,
-    category: "Income",
-    account: "Checking",
-    categoryColor: "bg-income",
-    currency: "USD",
-    type: "credit" as const
-  },
-  {
-    id: "3",
-    date: "2024-01-18",
-    description: "Netflix Subscription",
-    amount: -15.99,
-    category: "Entertainment",
-    account: "Credit Card",
-    categoryColor: "bg-primary",
-    currency: "USD",
-    type: "debit" as const
-  },
-  {
-    id: "4",
-    date: "2024-01-17",
-    description: "Gas Station",
-    amount: -45.20,
-    category: "Transportation",
-    account: "Checking",
-    categoryColor: "bg-warning",
-    currency: "USD",
-    type: "debit" as const
-  },
-  {
-    id: "5",
-    date: "2024-01-16",
-    description: "Online Shopping",
-    amount: -120.00,
-    category: "Shopping",
-    account: "Credit Card",
-    categoryColor: "bg-purple-500",
-    currency: "USD",
-    type: "debit" as const
-  },
-  {
-    id: "6",
-    date: "2024-01-15",
-    description: "Restaurant",
-    amount: -67.80,
-    category: "Food & Dining",
-    account: "Credit Card",
-    categoryColor: "bg-orange-500",
-    currency: "USD",
-    type: "debit" as const
-  }
-];
 
 export const TransactionList = () => {
   const { formatAmount } = useCurrency();
@@ -106,9 +40,31 @@ export const TransactionList = () => {
       const bankTransactions = await getTransactions(connectedAccountId, dateFrom, dateTo);
       setTransactions(bankTransactions);
       
+      // Save transactions to database with categorization
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const transactionsToSave = bankTransactions.map(transaction => ({
+          user_id: user.id,
+          bank_account_id: connectedAccountId,
+          transaction_id: transaction.id,
+          description: transaction.description,
+          amount: transaction.amount,
+          category: categorizeTransaction(transaction.description),
+          date: transaction.date
+        }));
+
+        // Use upsert to avoid duplicates
+        await supabase
+          .from('transactions')
+          .upsert(transactionsToSave, { 
+            onConflict: 'user_id,bank_account_id,transaction_id',
+            ignoreDuplicates: true 
+          });
+      }
+      
       toast({
         title: "Transactions loaded",
-        description: `Loaded ${bankTransactions.length} transactions from your bank account`
+        description: `Loaded and saved ${bankTransactions.length} transactions from your bank account`
       });
     } catch (error) {
       toast({
@@ -125,26 +81,6 @@ export const TransactionList = () => {
     setConnectedAccountId(accountId);
   };
 
-  const getCategoryColor = (description: string) => {
-    const desc = description.toLowerCase();
-    if (desc.includes('grocery') || desc.includes('restaurant') || desc.includes('coffee')) return 'bg-orange-500';
-    if (desc.includes('salary') || desc.includes('income') || desc.includes('deposit')) return 'bg-income';
-    if (desc.includes('gas') || desc.includes('transport') || desc.includes('taxi')) return 'bg-warning';
-    if (desc.includes('netflix') || desc.includes('entertainment') || desc.includes('subscription')) return 'bg-primary';
-    if (desc.includes('shop') || desc.includes('amazon') || desc.includes('store')) return 'bg-purple-500';
-    return 'bg-muted';
-  };
-
-  const getCategory = (description: string) => {
-    const desc = description.toLowerCase();
-    if (desc.includes('grocery') || desc.includes('restaurant') || desc.includes('coffee')) return 'Food & Dining';
-    if (desc.includes('salary') || desc.includes('income') || desc.includes('deposit')) return 'Income';
-    if (desc.includes('gas') || desc.includes('transport') || desc.includes('taxi')) return 'Transportation';
-    if (desc.includes('netflix') || desc.includes('entertainment') || desc.includes('subscription')) return 'Entertainment';
-    if (desc.includes('shop') || desc.includes('amazon') || desc.includes('store')) return 'Shopping';
-    if (desc.includes('electric') || desc.includes('utilities') || desc.includes('bill')) return 'Utilities';
-    return 'Other';
-  };
 
   // Only show real transactions, no mock data for dashboard
   const displayTransactions = transactions;
@@ -217,11 +153,7 @@ export const TransactionList = () => {
                   className="flex items-center justify-between p-4 rounded-lg border bg-card/50 hover:bg-card/80 transition-colors"
                 >
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${
-                      'categoryColor' in transaction 
-                        ? transaction.categoryColor 
-                        : getCategoryColor(transaction.description)
-                    }`} />
+                    <div className={`w-3 h-3 rounded-full bg-primary`} />
                     <div>
                       <p className="font-medium">{transaction.description}</p>
                       <p className="text-sm text-muted-foreground">
@@ -233,10 +165,7 @@ export const TransactionList = () => {
                   
                   <div className="flex items-center space-x-3">
                     <Badge variant="secondary" className="text-xs">
-                      {'category' in transaction 
-                        ? transaction.category 
-                        : getCategory(transaction.description)
-                      }
+                      {categorizeTransaction(transaction.description)}
                     </Badge>
                     <span 
                       className={`font-semibold ${
